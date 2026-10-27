@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paysleep-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paysleep
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paysleep
+  template:
+    metadata:
+      labels:
+        app: paysleep
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: paysleep
+          image: paysleep:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PAYSLEEP_DATA_DIR
+              value: /var/lib/paysleep
+            - name: PAYSLEEP_MAX_UPLOAD_MB
+              value: "20"
+            - name: PAYSLEEP_PROTON_ENABLED
+              value: "false"
+            - name: PAYSLEEP_PROTON_STATE_DIR
+              value: /var/lib/paysleep/proton-drive
+            - name: PAYSLEEP_PROTON_CREDENTIALS_STORE
+              value: keychain
+            - name: PAYSLEEP_GOOGLE_ENABLED
+              value: "false"
+            - name: PAYSLEEP_GOOGLE_CLIENT_SECRET_FILE
+              value: /var/run/secrets/paysleep/google/client-secret.json
+            - name: PAYSLEEP_GOOGLE_TOKEN_CACHE_FILE
+              value: /var/lib/paysleep/google-oauth-token.json
+            - name: RUST_LOG
+              value: info
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/paysleep
+            - name: tmp
+              mountPath: /tmp
+            - name: google-credentials
+              mountPath: /var/run/secrets/paysleep/google
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paysleep-data
+        - name: tmp
+          emptyDir: {}
+        - name: google-credentials
+          secret:
+            secretName: paysleep-google
+            optional: true
+            items:
+              - key: client-secret.json
+                path: client-secret.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paysleep
+spec:
+  type: ClusterIP
+  selector:
+    app: paysleep
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

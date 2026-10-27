@@ -1,0 +1,29 @@
+services:
+  paysleep:
+    image: paysleep:local
+    build:
+      context: .
+      args:
+        PROTON_DRIVE_VERSION: ${PROTON_DRIVE_VERSION:-0.9.0}
+    restart: unless-stopped
+    init: true
+    user: "${PAYSLEEP_UID:-1000}:${PAYSLEEP_GID:-1000}"
+    env_file:
+      - .env
+    environment:
+      PAYSLEEP_BIND: 0.0.0.0:8080
+      PAYSLEEP_DATA_DIR: /var/lib/paysleep
+      PAYSLEEP_GOOGLE_CLIENT_SECRET_FILE: /var/lib/paysleep/secrets/client-secret.json
+      PAYSLEEP_GOOGLE_TOKEN_CACHE_FILE: /var/lib/paysleep/google-oauth-token.json
+      PAYSLEEP_PROTON_BIN: /usr/local/bin/proton-drive
+      PAYSLEEP_PROTON_STATE_DIR: /var/lib/paysleep/proton-drive
+    ports:
+      - "${PAYSLEEP_PORT:-8080}:8080"
+    volumes:
+      - ./data:/var/lib/paysleep
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    stop_grace_period: 15s

@@ -1,0 +1,45 @@
+[workspace]
+members = [
+    "paysleep-app",
+    "paysleep-application",
+    "paysleep-core",
+    "paysleep-storage-filesystem",
+    "paysleep-storage-google-drive",
+    "paysleep-storage-proton-drive",
+    "paysleep-web",
+    "proton-drive",
+]
+default-members = ["paysleep-app"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+
+[workspace.dependencies]
+actix-web = "4.18.1"
+async-trait = "0.1.92"
+bytes = "1.11.1"
+chrono = "0.4.45"
+clap = "4.6.7"
+futures-util = "0.3.32"
+reqwest = { version = "0.12.28", default-features = false }
+serde = "1.0.229"
+serde_json = "1.0.154"
+smallvec = "1.15.2"
+tera = "2.4.0"
+thiserror = "2.0.21"
+tokio = "1.53.2"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.20"
+uuid = "1.23.0"
+yup-oauth2 = "11.0.0"
+
+[profile.release]
+codegen-units = 1
+incremental = false
+lto = "thin"
+panic = "abort"
+strip = "symbols"

@@ -1,0 +1,11 @@
+target
+data
+.git
+.env
+*.json
+.agents
+.aws
+.codex
+docs
+k8s
+*.md

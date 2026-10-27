@@ -1,0 +1,17 @@
+[package]
+name = "paysleep-core"
+description = "Domain model and business rules for Paysleep"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+chrono = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+[dev-dependencies]
+serde_json.workspace = true

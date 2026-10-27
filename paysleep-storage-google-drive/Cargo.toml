@@ -1,0 +1,19 @@
+[package]
+name = "paysleep-storage-google-drive"
+description = "Google Drive storage adapter for Paysleep"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+async-trait.workspace = true
+paysleep-application = { path = "../paysleep-application" }
+paysleep-core = { path = "../paysleep-core" }
+reqwest = { workspace = true, default-features = false, features = ["json", "rustls-tls"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tokio = { workspace = true, features = ["fs"] }
+uuid = { workspace = true, features = ["v4"] }
+yup-oauth2.workspace = true

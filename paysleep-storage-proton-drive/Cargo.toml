@@ -1,0 +1,16 @@
+[package]
+name = "paysleep-storage-proton-drive"
+description = "Proton Drive storage adapter for Paysleep"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+async-trait.workspace = true
+paysleep-application = { path = "../paysleep-application" }
+paysleep-core = { path = "../paysleep-core" }
+proton-drive = { path = "../proton-drive" }
+tokio = { workspace = true, features = ["fs", "rt"] }
+uuid = { workspace = true, features = ["v4"] }

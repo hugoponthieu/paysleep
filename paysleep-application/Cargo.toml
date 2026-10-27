@@ -1,0 +1,16 @@
+[package]
+name = "paysleep-application"
+description = "Application services and storage ports for Paysleep"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+paysleep-core = { path = "../paysleep-core" }
+tokio = { workspace = true, features = ["sync"] }
+tracing.workspace = true
+uuid = { workspace = true, features = ["v4"] }

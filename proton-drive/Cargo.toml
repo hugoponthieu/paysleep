@@ -1,0 +1,9 @@
+[package]
+name = "proton-drive"
+description = "Typed Rust wrapper around the official Proton Drive CLI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]

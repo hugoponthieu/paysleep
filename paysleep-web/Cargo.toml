@@ -1,0 +1,21 @@
+[package]
+name = "paysleep-web"
+description = "Actix Web and Tera frontend for Paysleep"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+actix-web.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+futures-util.workspace = true
+paysleep-application = { path = "../paysleep-application" }
+paysleep-core = { path = "../paysleep-core" }
+serde = { workspace = true, features = ["derive"] }
+smallvec.workspace = true
+tera.workspace = true
+tracing.workspace = true
+uuid.workspace = true

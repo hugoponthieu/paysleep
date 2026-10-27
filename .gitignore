@@ -1,0 +1,11 @@
+/target/
+/data/
+/.agents/
+/.aws/
+/.codex/
+.env
+service-account*.json
+client-secret*.json
+client_secret*.json
+google-oauth-token.json
+/crypto-autonomy-438314-c7-37a6229cd952.json
