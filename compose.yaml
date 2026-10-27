@@ -17,6 +17,9 @@ services:
       PAYSLEEP_GOOGLE_TOKEN_CACHE_FILE: /var/lib/paysleep/google-oauth-token.json
       PAYSLEEP_PROTON_BIN: /usr/local/bin/proton-drive
       PAYSLEEP_PROTON_STATE_DIR: /var/lib/paysleep/proton-drive
+      PAYSLEEP_PROTON_CREDENTIALS_STORE: unsafe_file
+      PROTON_DRIVE_CACHE_DIR: /var/lib/paysleep/proton-drive
+      PROTON_DRIVE_CREDENTIALS_STORE: unsafe_file
     ports:
       - "${PAYSLEEP_PORT:-8080}:8080"
     volumes:

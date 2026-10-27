@@ -43,10 +43,18 @@ spec:
               value: "20"
             - name: PAYSLEEP_PROTON_ENABLED
               value: "false"
+            - name: PAYSLEEP_PROTON_BIN
+              value: /usr/local/bin/proton-drive
+            - name: PAYSLEEP_PROTON_PATH
+              value: /my-files/fiche_de_paie
             - name: PAYSLEEP_PROTON_STATE_DIR
               value: /var/lib/paysleep/proton-drive
             - name: PAYSLEEP_PROTON_CREDENTIALS_STORE
-              value: keychain
+              value: unsafe_file
+            - name: PROTON_DRIVE_CACHE_DIR
+              value: /var/lib/paysleep/proton-drive
+            - name: PROTON_DRIVE_CREDENTIALS_STORE
+              value: unsafe_file
             - name: PAYSLEEP_GOOGLE_ENABLED
               value: "false"
             - name: PAYSLEEP_GOOGLE_CLIENT_SECRET_FILE

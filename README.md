@@ -30,12 +30,12 @@ L'URL affichée peut être ouverte sur un autre appareil. Utilisez ensuite exact
 ```env
 PAYSLEEP_PROTON_ENABLED=true
 PAYSLEEP_PROTON_BIN=/chemin/absolu/vers/proton-drive
-PAYSLEEP_PROTON_PATH=/my-files/Paysleep
+PAYSLEEP_PROTON_PATH=/my-files/fiche_de_paie
 PAYSLEEP_PROTON_STATE_DIR=/chemin/absolu/vers/data/proton-drive
 PAYSLEEP_PROTON_CREDENTIALS_STORE=keychain
 ```
 
-Le dossier distant donné par `PAYSLEEP_PROTON_PATH` doit déjà exister. Au démarrage, Paysleep vérifie désormais le binaire, la session et l'accès à ce dossier.
+Le dossier distant donné par `PAYSLEEP_PROTON_PATH` doit déjà exister. Au démarrage, Paysleep vérifie le binaire, la session et l'accès à ce dossier.
 
 `PAYSLEEP_PROTON_CREDENTIALS_STORE` accepte les valeurs prises en charge par le CLI :
 
@@ -57,79 +57,50 @@ client.login_interactive()?; // à exécuter une seule fois
 
 ### Proton dans Kubernetes
 
-Le meilleur compromis pour un service sans interface graphique est `pass` avec une clé GPG dédiée. N'utilisez pas votre clé GPG personnelle : créez une clé réservée à Paysleep, sans passphrase afin que le pod puisse redémarrer sans saisie interactive.
+L'image distroless contient le CLI officiel, mais pas de keychain, `pass` ou GPG. Kubernetes utilise donc le coffre `unsafe_file` du CLI et conserve la session dans le même PVC que les données Paysleep. Aucun identifiant ni mot de passe Proton n'est placé dans le manifeste.
 
-Les données sont séparées ainsi :
-
-- un Secret Kubernetes contient uniquement la clé GPG privée dédiée ;
-- un volume `emptyDir` reçoit le trousseau GPG importé à chaque démarrage ;
-- le PVC Paysleep conserve le password store chiffré et l'état du CLI Proton ;
-- le CLI crée et met à jour lui-même l'entrée `ch.proton.drive/drive-sdk-cli/auth-session`.
-
-L'image distroless embarque le CLI officiel `proton-drive`, téléchargé dans une layer Docker dédiée et versionnée. Elle ne contient cependant ni shell, ni `pass`, ni GPG. Pour utiliser le coffre `pass`, utilisez une variante de runtime Debian dédiée contenant `pass` et GPG ; ces outils ne doivent pas être ajoutés au runtime distroless.
-
-Créez une clé dédiée et relevez son empreinte complète :
-
-```sh
-gpg --full-generate-key
-gpg --list-secret-keys --keyid-format=long
-```
-
-Dans les commandes suivantes, remplacez les valeurs entre `<...>` ; les exemples ne contiennent aucune vraie clé :
-
-```sh
-gpg --armor --export-secret-keys '<FINGERPRINT_GPG_DEDIEE>' \
-  > paysleep-proton-private-key.asc
-
-kubectl --namespace '<NAMESPACE>' create secret generic paysleep-proton-gpg \
-  --from-file=private-key.asc=./paysleep-proton-private-key.asc
-
-rm paysleep-proton-private-key.asc
-```
-
-Montez la clé du Secret en lecture seule, par exemple sous `/var/run/secrets/paysleep/proton/private-key.asc`, et un volume `emptyDir` sous `/var/lib/paysleep/gnupg`. Le conteneur doit recevoir :
+Le conteneur reçoit à la fois les variables Paysleep et les variables natives du CLI :
 
 ```env
-GNUPGHOME=/var/lib/paysleep/gnupg
-PASSWORD_STORE_DIR=/var/lib/paysleep/password-store
-PAYSLEEP_PROTON_STATE_DIR=/var/lib/paysleep/proton-drive
-PAYSLEEP_PROTON_CREDENTIALS_STORE=pass
+PAYSLEEP_PROTON_ENABLED=false
 PAYSLEEP_PROTON_BIN=/usr/local/bin/proton-drive
-PAYSLEEP_PROTON_PATH=/my-files/Paysleep
+PAYSLEEP_PROTON_PATH=/my-files/fiche_de_paie
+PAYSLEEP_PROTON_STATE_DIR=/var/lib/paysleep/proton-drive
+PAYSLEEP_PROTON_CREDENTIALS_STORE=unsafe_file
+PROTON_DRIVE_CACHE_DIR=/var/lib/paysleep/proton-drive
+PROTON_DRIVE_CREDENTIALS_STORE=unsafe_file
 ```
 
-À chaque création du pod, avant Paysleep, un init container utilisant la même image doit importer la clé et initialiser `pass` :
-
-```sh
-chmod 700 "$GNUPGHOME"
-gpg --batch --import /var/run/secrets/paysleep/proton/private-key.asc
-pass init '<FINGERPRINT_GPG_DEDIEE>'
-```
-
-La première connexion reste volontairement interactive. Effectuez-la une seule fois selon cet ordre :
+La première connexion reste interactive et doit être faite une seule fois :
 
 1. Déployez Paysleep avec `PAYSLEEP_PROTON_ENABLED=false`.
-2. Vérifiez que l'init container a importé la clé.
-3. Lancez la connexion dans le pod :
+2. Lancez directement le CLI embarqué dans le pod :
 
    ```sh
    kubectl --namespace '<NAMESPACE>' exec -it deploy/paysleep -- \
-     env PROTON_DRIVE_CACHE_DIR=/var/lib/paysleep/proton-drive \
-         PROTON_DRIVE_CREDENTIALS_STORE=pass \
-         proton-drive auth login
+     /usr/local/bin/proton-drive auth login
    ```
 
-4. Ouvrez l'URL affichée depuis votre navigateur, même sur une autre machine.
-5. Vérifiez que la session existe :
+3. Ouvrez l'URL affichée et terminez la connexion dans le navigateur.
+4. Vérifiez l'accès au dossier :
 
    ```sh
    kubectl --namespace '<NAMESPACE>' exec deploy/paysleep -- \
-     pass ls ch.proton.drive/drive-sdk-cli
+     /usr/local/bin/proton-drive filesystem list -j /my-files/fiche_de_paie
    ```
 
-6. Passez `PAYSLEEP_PROTON_ENABLED=true` et redémarrez le Deployment.
+5. Passez `PAYSLEEP_PROTON_ENABLED=true` et redémarrez le Deployment.
 
-Le PVC doit rester accessible en écriture : Proton peut renouveler et réenregistrer sa session. Ne stockez ni identifiant ni mot de passe Proton dans Kubernetes. Si la clé GPG est remplacée, réinitialisez `pass` avec la nouvelle empreinte et refaites `proton-drive auth login` avant de révoquer l'ancienne clé.
+Le fichier de session est en clair dans le PVC, avec les permissions du processus `10001`. Le volume doit donc être privé, chiffré au repos par la couche de stockage et inaccessible aux autres workloads. Proton peut renouveler la session : ne montez pas ce dossier en lecture seule.
+
+Avec Docker Compose, initialisez le même volume avant le premier démarrage :
+
+```sh
+docker compose run --rm \
+  --entrypoint /usr/local/bin/proton-drive \
+  paysleep auth login
+docker compose up -d
+```
 
 ## Configuration Google Drive
 
